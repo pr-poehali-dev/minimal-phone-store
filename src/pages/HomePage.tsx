@@ -9,9 +9,10 @@ const FLATLAY_BG = "https://cdn.poehali.dev/projects/614c262d-6f9b-42ae-b7eb-3e6
 interface HomePageProps {
   setPage: (p: Page) => void;
   addToCart: (item: Omit<CartItem, "quantity">) => void;
+  openProduct: (id: number) => void;
 }
 
-export default function HomePage({ setPage, addToCart }: HomePageProps) {
+export default function HomePage({ setPage, addToCart, openProduct }: HomePageProps) {
   const featured = products.slice(0, 3);
 
   return (
@@ -89,7 +90,8 @@ export default function HomePage({ setPage, addToCart }: HomePageProps) {
             {featured.map((p, i) => (
               <div
                 key={p.id}
-                className="product-card bg-card border border-border rounded-sm overflow-hidden animate-slide-up"
+                onClick={() => openProduct(p.id)}
+                className="product-card bg-card border border-border rounded-sm overflow-hidden animate-slide-up cursor-pointer"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="relative aspect-square bg-secondary overflow-hidden">
@@ -118,7 +120,7 @@ export default function HomePage({ setPage, addToCart }: HomePageProps) {
                       )}
                     </div>
                     <button
-                      onClick={() => addToCart({ id: p.id, name: p.name, price: p.price, image: p.image, brand: p.brand })}
+                      onClick={e => { e.stopPropagation(); addToCart({ id: p.id, name: p.name, price: p.price, image: p.image, brand: p.brand }); }}
                       className="btn-primary w-8 h-8 rounded-sm flex items-center justify-center"
                     >
                       <Icon name="Plus" size={16} />

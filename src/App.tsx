@@ -5,9 +5,10 @@ import AboutPage from "@/pages/AboutPage";
 import ReviewsPage from "@/pages/ReviewsPage";
 import CartPage from "@/pages/CartPage";
 import ProfilePage from "@/pages/ProfilePage";
+import ProductPage from "@/pages/ProductPage";
 import Navbar from "@/components/Navbar";
 
-export type Page = "home" | "catalog" | "about" | "reviews" | "cart" | "profile";
+export type Page = "home" | "catalog" | "about" | "reviews" | "cart" | "profile" | "product";
 
 export interface CartItem {
   id: number;
@@ -20,7 +21,20 @@ export interface CartItem {
 
 export default function App() {
   const [page, setPage] = useState<Page>("home");
+  const [prevPage, setPrevPage] = useState<Page>("catalog");
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  const navigate = (p: Page) => {
+    setPrevPage(page);
+    setPage(p);
+  };
+
+  const openProduct = (id: number) => {
+    setPrevPage(page);
+    setSelectedProductId(id);
+    setPage("product");
+  };
 
   const addToCart = (item: Omit<CartItem, "quantity">) => {
     setCart(prev => {
@@ -45,14 +59,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background font-golos">
-      <Navbar page={page} setPage={setPage} cartCount={cartCount} />
+      <Navbar page={page} setPage={navigate} cartCount={cartCount} />
       <main>
-        {page === "home" && <HomePage setPage={setPage} addToCart={addToCart} />}
-        {page === "catalog" && <CatalogPage addToCart={addToCart} />}
+        {page === "home" && <HomePage setPage={navigate} openProduct={openProduct} addToCart={addToCart} />}
+        {page === "catalog" && <CatalogPage addToCart={addToCart} openProduct={openProduct} />}
         {page === "about" && <AboutPage />}
         {page === "reviews" && <ReviewsPage />}
         {page === "cart" && <CartPage cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} />}
         {page === "profile" && <ProfilePage />}
+        {page === "product" && selectedProductId !== null && (
+          <ProductPage
+            productId={selectedProductId}
+            addToCart={addToCart}
+            onBack={() => navigate(prevPage)}
+            openProduct={openProduct}
+          />
+        )}
       </main>
     </div>
   );

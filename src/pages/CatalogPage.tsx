@@ -5,11 +5,12 @@ import Icon from "@/components/ui/icon";
 
 interface CatalogPageProps {
   addToCart: (item: Omit<CartItem, "quantity">) => void;
+  openProduct: (id: number) => void;
 }
 
 type SortOption = "default" | "price_asc" | "price_desc" | "rating";
 
-export default function CatalogPage({ addToCart }: CatalogPageProps) {
+export default function CatalogPage({ addToCart, openProduct }: CatalogPageProps) {
   const [selectedBrand, setSelectedBrand] = useState("Все");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStorage, setSelectedStorage] = useState("Все");
@@ -173,7 +174,8 @@ export default function CatalogPage({ addToCart }: CatalogPageProps) {
               {filtered.map((p, i) => (
                 <div
                   key={p.id}
-                  className="product-card bg-card border border-border rounded-sm overflow-hidden animate-slide-up"
+                  onClick={() => openProduct(p.id)}
+                  className="product-card bg-card border border-border rounded-sm overflow-hidden animate-slide-up cursor-pointer"
                   style={{ animationDelay: `${i * 40}ms` }}
                 >
                   <div className="relative aspect-square bg-secondary overflow-hidden">
@@ -206,7 +208,7 @@ export default function CatalogPage({ addToCart }: CatalogPageProps) {
                         )}
                       </div>
                       <button
-                        onClick={() => handleAdd(p)}
+                        onClick={e => { e.stopPropagation(); handleAdd(p); }}
                         className={`w-7 h-7 rounded-sm flex items-center justify-center transition-all text-xs ${
                           addedId === p.id
                             ? "bg-green-600 text-white"
