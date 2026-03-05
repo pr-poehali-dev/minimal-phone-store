@@ -1,28 +1,59 @@
+import { useState } from "react";
+import HomePage from "@/pages/HomePage";
+import CatalogPage from "@/pages/CatalogPage";
+import AboutPage from "@/pages/AboutPage";
+import ReviewsPage from "@/pages/ReviewsPage";
+import CartPage from "@/pages/CartPage";
+import ProfilePage from "@/pages/ProfilePage";
+import Navbar from "@/components/Navbar";
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+export type Page = "home" | "catalog" | "about" | "reviews" | "cart" | "profile";
 
-const queryClient = new QueryClient();
+export interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+  brand: string;
+  quantity: number;
+}
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+export default function App() {
+  const [page, setPage] = useState<Page>("home");
+  const [cart, setCart] = useState<CartItem[]>([]);
 
-export default App;
+  const addToCart = (item: Omit<CartItem, "quantity">) => {
+    setCart(prev => {
+      const existing = prev.find(c => c.id === item.id);
+      if (existing) {
+        return prev.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c);
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (id: number) => {
+    setCart(prev => prev.filter(c => c.id !== id));
+  };
+
+  const updateQuantity = (id: number, quantity: number) => {
+    if (quantity < 1) { removeFromCart(id); return; }
+    setCart(prev => prev.map(c => c.id === id ? { ...c, quantity } : c));
+  };
+
+  const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
+
+  return (
+    <div className="min-h-screen bg-background font-golos">
+      <Navbar page={page} setPage={setPage} cartCount={cartCount} />
+      <main>
+        {page === "home" && <HomePage setPage={setPage} addToCart={addToCart} />}
+        {page === "catalog" && <CatalogPage addToCart={addToCart} />}
+        {page === "about" && <AboutPage />}
+        {page === "reviews" && <ReviewsPage />}
+        {page === "cart" && <CartPage cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} />}
+        {page === "profile" && <ProfilePage />}
+      </main>
+    </div>
+  );
+}
