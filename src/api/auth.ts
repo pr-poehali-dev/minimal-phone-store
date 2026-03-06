@@ -65,3 +65,25 @@ export async function logout() {
   await request("logout", "POST");
   clearSession();
 }
+
+export interface OrderItem {
+  name: string;
+  qty: number;
+  price: number;
+  image?: string;
+}
+
+export interface Order {
+  id: number;
+  status: string;
+  total: number;
+  items: OrderItem[];
+  created_at: string;
+}
+
+export async function getOrders(): Promise<Order[]> {
+  if (!getSessionId()) return [];
+  const r = await request("orders", "GET");
+  if (!r.ok || typeof r.data !== "object" || r.data === null || !("orders" in r.data)) return [];
+  return (r.data as { orders: Order[] }).orders;
+}

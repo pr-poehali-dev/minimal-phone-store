@@ -165,6 +165,26 @@ def handler(event: dict, context) -> dict:
 
             return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True, "user": {**user, "name": name, "phone": phone}})}
 
+        # GET /auth/orders
+        if action == "orders" and method == "GET":
+            if not session_id:
+                return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Не авторизован"})}
+            user = get_user_by_session(conn, session_id)
+            if not user:
+                return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Сессия истекла"})}
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"SELECT id, status, total, items, created_at FROM {SCHEMA}.orders "
+                    f"WHERE user_id = %s ORDER BY created_at DESC",
+                    (user["id"],)
+                )
+                rows = cur.fetchall()
+            orders = [
+                {"id": r[0], "status": r[1], "total": float(r[2]), "items": r[3], "created_at": r[4].isoformat()}
+                for r in rows
+            ]
+            return {"statusCode": 200, "headers": CORS, "body": json.dumps({"orders": orders})}
+
         # POST /auth/logout
         if action == "logout" and method == "POST":
             if session_id:

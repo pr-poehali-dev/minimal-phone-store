@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { register, login, getMe, updateProfile, logout, User } from "@/api/auth";
+import { register, login, getMe, updateProfile, logout, getOrders, User, Order } from "@/api/auth";
 
 type AuthMode = "login" | "register";
 
@@ -48,7 +48,9 @@ export default function ProfilePage() {
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
 
-  const [tab, setTab] = useState<"settings" | "security">("settings");
+  const [tab, setTab] = useState<"settings" | "security" | "orders">("settings");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -132,7 +134,15 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await logout();
     setUser(null);
+    setOrders([]);
     setLoginEmail(""); setLoginPassword(""); setLoginError("");
+  };
+
+  const loadOrders = async () => {
+    setOrdersLoading(true);
+    const data = await getOrders();
+    setOrders(data);
+    setOrdersLoading(false);
   };
 
   if (loading) {
@@ -252,10 +262,14 @@ export default function ProfilePage() {
         {[
           { id: "settings" as const, label: "Данные профиля", icon: "User" },
           { id: "security" as const, label: "Безопасность", icon: "Lock" },
+          { id: "orders" as const, label: "Мои заказы", icon: "ShoppingBag" },
         ].map(t => (
           <button
             key={t.id}
-            onClick={() => { setTab(t.id); setSaveError(""); setSaveSuccess(false); }}
+            onClick={() => {
+              setTab(t.id); setSaveError(""); setSaveSuccess(false);
+              if (t.id === "orders") loadOrders();
+            }}
             className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
               tab === t.id
                 ? "border-foreground text-foreground"
@@ -332,6 +346,75 @@ export default function ProfilePage() {
           </button>
         </div>
       )}
+
+      {tab === "orders" && (
+        <div className="animate-slide-up">
+          {ordersLoading ? (
+            <div className="py-16 text-center">
+              <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin mx-auto" />
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-16 text-center">
+              <Icon name="ShoppingBag" size={40} className="mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground text-sm">У вас пока нет заказов</p>
+            </div>
+          ) : (
+            <div className="space-y-4 max-w-2xl">
+              {orders.map(order => (
+                <div key={order.id} className="border border-border rounded-sm p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Заказ #{order.id}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {new Date(order.created_at).toLocaleDateString("ru-RU", {
+                          day: "numeric", month: "long", year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <OrderStatus status={order.status} />
+                      <p className="text-base font-black mt-1">{order.total.toLocaleString("ru-RU")} ₽</p>
+                    </div>
+                  </div>
+                  {order.items && order.items.length > 0 && (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      {order.items.map((item, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          {item.image && (
+                            <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded-sm bg-secondary shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">{item.qty} шт.</p>
+                          </div>
+                          <p className="text-sm font-semibold shrink-0">{(item.price * item.qty).toLocaleString("ru-RU")} ₽</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  pending:    { label: "Новый",      cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  processing: { label: "В обработке", cls: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  shipped:    { label: "Отправлен",  cls: "bg-purple-50 text-purple-700 border-purple-200" },
+  delivered:  { label: "Доставлен", cls: "bg-green-50 text-green-700 border-green-200" },
+  cancelled:  { label: "Отменён",   cls: "bg-red-50 text-red-700 border-red-200" },
+};
+
+function OrderStatus({ status }: { status: string }) {
+  const s = STATUS_MAP[status] ?? { label: status, cls: "bg-secondary text-muted-foreground border-border" };
+  return (
+    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-sm border ${s.cls}`}>
+      {s.label}
+    </span>
   );
 }
