@@ -137,6 +137,20 @@
   }
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 18s linear infinite;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
