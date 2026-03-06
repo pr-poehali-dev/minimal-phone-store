@@ -137,6 +137,29 @@
   }
 }
 
+/* Двойной слайдер цены */
+.range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(var(--foreground));
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 0 0 1px hsl(var(--foreground));
+  cursor: pointer;
+  pointer-events: all;
+}
+.range-thumb::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(var(--foreground));
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 0 0 1px hsl(var(--foreground));
+  cursor: pointer;
+  pointer-events: all;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
